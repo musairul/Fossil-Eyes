@@ -125,4 +125,4 @@ def get_markers():
     return jsonify(markers)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
