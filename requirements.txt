@@ -2,7 +2,5 @@ img2vec_pytorch
 pillow
 openai
 flask
-io
-logging
-sklearn
+scikit-learn
 dotenv
