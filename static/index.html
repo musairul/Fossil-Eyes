@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fossil Identifier</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f0ebe1;
+            color: #2c1810;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            color: #5c3d2e;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .camera-container {
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        #video, #canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        #canvas {
+            display: none;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .capture-btn {
+            background: #5c3d2e;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.3s ease;
+        }
+
+        .capture-btn:hover {
+            background: #7c5d4e;
+        }
+
+        .result {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .result h2 {
+            color: #5c3d2e;
+            margin-top: 0;
+        }
+
+        .result pre {
+            background: #f8f8f8;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Fossil Identifier</h1>
+            <p>Capture and analyze your fossil discoveries</p>
+        </div>
+
+        <div class="camera-container">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+            <div class="controls">
+                <button class="capture-btn" id="capture">
+                    <i class="fas fa-camera"></i>
+                    Capture Image
+                </button>
+            </div>
+        </div>
+
+        <div class="result" id="result" style="display: none">
+            <h2>Analysis Results</h2>
+            <pre id="analysis"></pre>
+        </div>
+    </div>
+
+    <script>
+        let streaming = false;
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureButton = document.getElementById('capture');
+        const resultDiv = document.getElementById('result');
+        const analysisDiv = document.getElementById('analysis');
+
+        // Get camera access
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' },
+                    audio: false
+                });
+                video.srcObject = stream;
+                video.play();
+                console.log('Camera started successfully');
+            } catch (err) {
+                console.error('Error accessing camera:', err);
+                alert('Error accessing camera. Please make sure you have granted camera permissions.');
+            }
+        }
+
+        // Set up video dimensions once metadata is loaded
+        video.addEventListener('canplay', function() {
+            if (!streaming) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                streaming = true;
+                console.log('Video dimensions set:', canvas.width, 'x', canvas.height);
+            }
+        });
+
+        // Capture and send image
+        captureButton.addEventListener('click', async function() {
+            if (streaming) {
+                // Draw current video frame to canvas
+                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                // Convert canvas to blob
+                try {
+                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+                    console.log('Image captured, size:', blob.size, 'bytes');
+
+                    // Send to backend
+                    const formData = new FormData();
+                    formData.append('image', blob);
+
+                    console.log('Sending image to backend...');
+                    const response = await fetch('/analyze', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) throw new Error('Backend error');
+
+                    const result = await response.json();
+                    console.log('Received analysis:', result);
+
+                    // Display results
+                    resultDiv.style.display = 'block';
+                    analysisDiv.textContent = JSON.stringify(result, null, 2);
+                } catch (err) {
+                    console.error('Error processing image:', err);
+                    alert('Error processing image. Please try again.');
+                }
+            }
+        });
+
+        // Start camera when page loads
+        startCamera();
+    </script>
+</body>
+</html>
