@@ -1,5 +1,5 @@
 img2vec_pytorch
-PIL
+pillow
 openai
 flask
 io
