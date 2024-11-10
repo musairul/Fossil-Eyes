@@ -1,73 +1,79 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory, render_template
 import os
 from PIL import Image
 import io
 import logging
 from infer import infer
 from analyse import analyse_fossil
+import base64
+import uuid
+from datetime import datetime
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 
-# Serve the static HTML file
+# Configuration for uploads
+UPLOAD_FOLDER = 'static/uploads'
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+# In-memory storage for markers
+markers = []
+
 @app.route('/')
 def index():
-    logger.info("Serving index page")
-    return app.send_static_file('index.html')
+    return send_from_directory('static', 'index.html')
+
+@app.route('/map')
+def map_page():
+    return send_from_directory('static', 'map.html')
+
+@app.route('/gallery') 
+def gallery():
+    # Path to the 'uploads' folder
+    uploads_folder = os.path.join(app.root_path, 'static', 'uploads')
+    
+    # Get a list of all image files in the folder
+    image_files = [f for f in os.listdir(uploads_folder) if f.endswith('.jpg')]
+    
+    # Pass the list of image files to the template
+    return render_template('gallery.html', images=image_files)
+
 
 @app.route('/analyze', methods=['POST'])
 def analyze_image():
-    logger.info("Received image analysis request")
-    
     if 'image' not in request.files:
-        logger.error("No image file in request")
         return jsonify({'error': 'No image file'}), 400
     
     image_file = request.files['image']
     
     try:
-        # Read and process the image
         image_data = image_file.read()
         image = Image.open(io.BytesIO(image_data))
         
-        logger.info(f"Received image: size={image.size}, mode={image.mode}")
-        
         # Get initial prediction and confidence
         prediction, confidence = infer(image)
-        logger.info(f"Prediction: {prediction}, Confidence: {confidence}")
         
-        # Initialize basic result structure
         result = {
             'name': prediction,
             'confidence': confidence
         }
         
-        # Only proceed with detailed analysis if it's a valid fossil prediction
         if prediction not in ["not enough confidence", "Non-Fossils", "Error"]:
             analysis = analyse_fossil(prediction)
-            print("anlysis app",analysis)
-            
             if analysis != "error":
-                # Add detailed analysis to result
-                result.update({
-                    'Age': analysis['Age'],
-                    'Confidence': confidence,
-                    'Location': analysis['Location'],
-                    'Fact_1': analysis['Fact_1'],
-                    'Fact_2': analysis['Fact_2'],
-                    'Fact_3': analysis['Fact_3']
-                })
-            else:
-                logger.error("Error in fossil analysis")
-                result = {
-                    'name': 'Error',
-                    'confidence': confidence
-                }
+                result.update(analysis)
         
-        logger.info("Analysis completed successfully")
+        # Save the image for later use with markers
+        filename = f"{uuid.uuid4()}.jpg"
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        with open(filepath, 'wb') as f:
+            f.write(image_data)
+        
+        result['image_path'] = f'/static/uploads/{filename}'
         return jsonify(result)
         
     except Exception as e:
@@ -77,6 +83,46 @@ def analyze_image():
             'confidence': 0
         }), 500
 
+@app.route('/add_marker', methods=['POST'])
+def add_marker():
+    try:
+        if 'image' not in request.files:
+            return jsonify({'status': 'error', 'message': 'No image file'}), 400
+
+        image_file = request.files['image']
+        username = request.form.get('username')
+        lat = float(request.form.get('lat'))
+        lng = float(request.form.get('lng'))
+
+        # Generate unique filename and save image
+        filename = f"{uuid.uuid4()}.jpg"
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        image_file.save(filepath)
+        
+        # Create marker data
+        marker_data = {
+            'username': username,
+            'lat': lat,
+            'lng': lng,
+            'image_url': f'/static/uploads/{filename}',
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        markers.append(marker_data)
+        logger.info(f"Added new marker: {marker_data}")
+        
+        return jsonify({
+            'status': 'success',
+            'image_url': marker_data['image_url']
+        })
+    
+    except Exception as e:
+        logger.error(f"Error adding marker: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/get_markers')
+def get_markers():
+    return jsonify(markers)
+
 if __name__ == '__main__':
-    logger.info("Starting Flask server")
-    app.run(debug=False)
+    app.run(debug=True)

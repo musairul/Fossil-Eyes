@@ -30,6 +30,53 @@
         margin-bottom: 0.5rem;
       }
 
+      .username-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+      }
+
+      .modal-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 400px;
+      }
+
+      .modal-content input {
+        width: 100%;
+        padding: 0.75rem;
+        margin: 1rem 0;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 1rem;
+      }
+
+      .modal-content button {
+        width: 100%;
+        padding: 0.75rem;
+        background: #5c3d2e;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+
+      .modal-content button:hover {
+        background: #7c5d4e;
+      }
+
       .header p {
         color: #666;
         font-size: 1.1rem;
@@ -85,6 +132,61 @@
         align-items: center;
         gap: 8px;
         transition: background 0.3s ease;
+      }
+
+      /* Modal Fixes */
+      .modal-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        width: 80%;
+        max-width: 300px; /* Reduced from 400px */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .modal-content input {
+        width: calc(100% - 1.5rem); /* Account for padding */
+        padding: 0.75rem;
+        margin: 1rem 0;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 1rem;
+        box-sizing: border-box; /* Include padding in width calculation */
+      }
+
+      .modal-content h2 {
+        margin-top: 0;
+        font-size: 1.5rem;
+        color: #5c3d2e;
+      }
+
+      /* Map Marker Popup Fixes */
+      .marker-popup {
+        max-width: 200px; /* Set maximum width for popup */
+      }
+
+      .marker-popup img {
+        width: 100%;
+        height: auto;
+        max-height: 150px; /* Limit image height */
+        object-fit: cover; /* Maintain aspect ratio while covering area */
+        border-radius: 8px;
+        margin-bottom: 10px;
+      }
+
+      /* Make sure the leaflet popup can accommodate our content */
+      .leaflet-popup-content {
+        margin: 13px;
+        min-width: 200px !important;
+      }
+
+      .leaflet-popup-content-wrapper {
+        padding: 1px;
+        border-radius: 8px;
       }
 
       .btn:hover {
@@ -167,6 +269,32 @@
         margin-top: 1rem;
       }
 
+      .header-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      .map-btn {
+        background: #5c3d2e;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 25px;
+        font-size: 1.1rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        transition: background 0.3s ease;
+      }
+
+      .map-btn:hover {
+        background: #7c5d4e;
+      }
+
       @media (max-width: 600px) {
         .header h1 {
           font-size: 2rem;
@@ -187,6 +315,25 @@
       <div class="header">
         <h1>Fossil-Eyes</h1>
         <p>Capture and analyze your fossil discoveries</p>
+      </div>
+
+      <div class="header-buttons">
+        <a href="/map" class="map-btn">
+          <i class="fas fa-map-marker-alt"></i>
+          View Fossil Map
+        </a>
+        <a href="/gallery" class="map-btn">
+          <i class="fas fa-image"></i>
+          View Collection
+        </a>
+      </div>
+
+      <div class="username-modal" id="usernameModal">
+        <div class="modal-content">
+          <h2>Enter Your Username</h2>
+          <input type="text" id="usernameInput" placeholder="Username" />
+          <button onclick="submitUsername()">Submit</button>
+        </div>
       </div>
 
       <div class="camera-container" id="cameraContainer">
@@ -217,6 +364,124 @@
     </div>
 
     <script>
+      let currentPosition = null;
+      let currentImageBlob = null;
+
+      // Get user's location on page load
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          function (position) {
+            currentPosition = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            };
+            console.log("Location obtained:", currentPosition);
+          },
+          function (error) {
+            console.error("Error getting location:", error);
+            alert(
+              "Please enable location services to mark your fossil discoveries on the map."
+            );
+          }
+        );
+      } else {
+        console.error("Geolocation not available");
+        alert("Your browser doesn't support location services.");
+      }
+
+      // Function to show username modal
+      function showUsernameModal() {
+        document.getElementById("usernameModal").style.display = "block";
+      }
+
+      // Function to handle username submission
+      async function submitUsername() {
+        const username = document.getElementById("usernameInput").value.trim();
+        if (!username) {
+          alert("Please enter a username");
+          return;
+        }
+
+        if (!currentPosition) {
+          alert("Location not available. Please enable location services.");
+          return;
+        }
+
+        if (!currentImageBlob) {
+          alert("No image captured yet.");
+          return;
+        }
+
+        // Create FormData and send to server
+        const formData = new FormData();
+        formData.append("image", currentImageBlob);
+        formData.append("username", username);
+        formData.append("lat", currentPosition.lat);
+        formData.append("lng", currentPosition.lng);
+
+        try {
+          const response = await fetch("/add_marker", {
+            method: "POST",
+            body: formData,
+          });
+
+          const result = await response.json();
+          if (result.status === "success") {
+            document.getElementById("usernameModal").style.display = "none";
+            alert("Your fossil discovery has been added to the map!");
+          } else {
+            throw new Error(result.message || "Failed to add marker");
+          }
+        } catch (error) {
+          console.error("Error adding marker:", error);
+          alert("Failed to add your discovery to the map. Please try again.");
+        }
+      }
+
+      // Modify the existing analyzeImage function
+      async function analyzeImage(imageData) {
+        loadingDiv.style.display = "flex";
+
+        try {
+          // Store the image blob for later use
+          currentImageBlob = imageData;
+
+          const formData = new FormData();
+          formData.append("image", imageData);
+
+          console.log("Sending image to backend...");
+          const response = await fetch("/analyze", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!response.ok) throw new Error("Backend error");
+
+          const result = await response.json();
+          console.log("Received analysis:", result);
+
+          displayAnalysis(result);
+
+          // If it's a valid fossil (not an error or non-fossil), show username modal
+          if (
+            result.name !== "Error" &&
+            result.name !== "Non-Fossils" &&
+            captureClicked == true
+          ) {
+            //showUsernameModal();
+            captureClicked = false;
+          }
+        } catch (err) {
+          console.error("Error processing image:", err);
+          displayAnalysis({
+            name: "Error",
+            confidence: 0,
+          });
+        } finally {
+          loadingDiv.style.display = "none";
+        }
+      }
+
       let streaming = false;
       let currentStream = null;
       const video = document.getElementById("video");
@@ -337,6 +602,9 @@
         loadingDiv.style.display = "flex";
 
         try {
+          // Store the image blob for later use
+          currentImageBlob = imageData;
+
           const formData = new FormData();
           formData.append("image", imageData);
 
@@ -349,9 +617,26 @@
           if (!response.ok) throw new Error("Backend error");
 
           const result = await response.json();
-          console.log("Recieved analysis:", result);
+          console.log("Received analysis:", result);
 
           displayAnalysis(result);
+
+          // If it's a valid fossil (not an error or non-fossil), show username modal
+          if (
+            result.name !== "Error" &&
+            result.name !== "Non-Fossils" &&
+            captureClicked == true
+          ) {
+            // Check if we have location data
+            if (!currentPosition) {
+              alert(
+                "Location data not available. Please enable location services and try again."
+              );
+              return;
+            }
+            showUsernameModal();
+            captureClicked = false;
+          }
         } catch (err) {
           console.error("Error processing image:", err);
           displayAnalysis({
@@ -363,7 +648,10 @@
         }
       }
 
+      let captureClicked;
+
       captureButton.addEventListener("click", async function () {
+        captureClicked = true;
         if (captureButton.innerHTML.includes("Retry")) {
           await resetUI();
           return;
