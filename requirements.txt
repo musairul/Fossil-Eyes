@@ -3,4 +3,4 @@ pillow
 openai
 flask
 scikit-learn
-dotenv
+python-dotenv

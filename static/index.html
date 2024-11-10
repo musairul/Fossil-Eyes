@@ -313,9 +313,7 @@
         if (result.name === "Non-Fossils" || result.name === "Error") {
           analysisDiv.innerHTML = `
             <p><strong>Result:</strong> ${result.name}</p>
-            <p><strong>Confidence:</strong> ${
-              result.confidence.toFixed(2) * 100
-            }%</p>
+            <p><strong>Confidence:</strong> ${result.confidence * 100}%</p>
             ${
               result.name === "Error"
                 ? '<p class="error-message">An error occurred during analysis. Please try again.</p>'
@@ -325,9 +323,7 @@
         } else {
           analysisDiv.innerHTML = `
             <p><strong>Name:</strong> ${result.name}</p>
-            <p><strong>Confidence:</strong> ${
-              result.confidence.toFixed(2) * 100
-            }%</p>
+            <p><strong>Confidence:</strong> ${result.confidence * 100}%</p>
             <p><strong>Age:</strong> ${result.Age}</p>
             <p><strong>Location:</strong> ${result.Location}</p>
             <p><strong>Fact 1:</strong> ${result.Fact_1}</p>
