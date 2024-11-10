@@ -1,4 +1,3 @@
-pickle
 img2vec_pytorch
 PIL
 openai
