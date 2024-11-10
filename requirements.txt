@@ -6,3 +6,4 @@ flask
 io
 logging
 sklearn
+dotenv

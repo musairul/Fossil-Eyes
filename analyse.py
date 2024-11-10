@@ -1,8 +1,12 @@
+import os
 from flask import json
 from openai import OpenAI
+from dotenv import load_dotenv
 
+load_dotenv()
+OPEN_AI = os.getenv("OPEN_AI")
 def analyse_fossil(fossil_name):
-    client = OpenAI(api_key="secret.OPEN_AI")
+    client = OpenAI(api_key=OPEN_AI)
     
     try:
         response = client.chat.completions.create(
