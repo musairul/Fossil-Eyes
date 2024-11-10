@@ -3,6 +3,8 @@ import os
 from PIL import Image
 import io
 import logging
+from infer import infer
+from analyse import analyse_fossil
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -31,38 +33,50 @@ def analyze_image():
         image_data = image_file.read()
         image = Image.open(io.BytesIO(image_data))
         
-        # Log image details
         logger.info(f"Received image: size={image.size}, mode={image.mode}")
         
-        # Here you would typically do your fossil analysis
-        # This is a placeholder response
+        # Get initial prediction and confidence
+        prediction, confidence = infer(image)
+        logger.info(f"Prediction: {prediction}, Confidence: {confidence}")
+        
+        # Initialize basic result structure
         result = {
-            'status': 'success',
-            'image_dimensions': {
-                'width': image.size[0],
-                'height': image.size[1]
-            },
-            'preliminary_analysis': {
-                'possible_type': 'Unknown Fossil',
-                'confidence': 'Further analysis needed',
-                'suggestions': [
-                    'Ensure good lighting',
-                    'Try multiple angles',
-                    'Include scale reference'
-                ]
-            }
+            'name': prediction,
+            'confidence': confidence
         }
+        
+        # Only proceed with detailed analysis if it's a valid fossil prediction
+        if prediction not in ["not enough confidence", "Non-Fossils", "Error"]:
+            analysis = analyse_fossil(prediction)
+            print("anlysis app",analysis)
+            
+            if analysis != "error":
+                # Add detailed analysis to result
+                result.update({
+                    'Age': analysis['Age'],
+                    'Confidence': confidence,
+                    'Location': analysis['Location'],
+                    'Fact_1': analysis['Fact_1'],
+                    'Fact_2': analysis['Fact_2'],
+                    'Fact_3': analysis['Fact_3']
+                })
+            else:
+                logger.error("Error in fossil analysis")
+                result = {
+                    'name': 'Error',
+                    'confidence': confidence
+                }
         
         logger.info("Analysis completed successfully")
         return jsonify(result)
         
     except Exception as e:
         logger.error(f"Error processing image: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'name': 'Error',
+            'confidence': 0
+        }), 500
 
 if __name__ == '__main__':
-
-    
-    # Start the server
     logger.info("Starting Flask server")
     app.run(debug=True)

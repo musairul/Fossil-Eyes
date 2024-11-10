@@ -1,213 +1,418 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fossil Identifier</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fossil-Eyes</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <style>
-        body {
-            margin: 0;
-            font-family: system-ui, -apple-system, sans-serif;
-            background: #f0ebe1;
-            color: #2c1810;
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, sans-serif;
+        background: #f0ebe1;
+        color: #2c1810;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      .header h1 {
+        color: #5c3d2e;
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .header p {
+        color: #666;
+        font-size: 1.1rem;
+      }
+
+      .camera-container {
+        position: relative;
+        width: 100%;
+        max-width: 640px;
+        margin: 0 auto;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        transition: all 0.5s ease-in-out;
+      }
+
+      .camera-container.shrink {
+        max-width: 320px;
+        margin-top: -20px;
+      }
+
+      #video,
+      #canvas,
+      #uploadedImage {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+
+      #canvas,
+      #uploadedImage {
+        display: none;
+      }
+
+      .controls {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.9);
+      }
+
+      .btn {
+        background: #5c3d2e;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 25px;
+        font-size: 1.1rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.3s ease;
+      }
+
+      .btn:hover {
+        background: #7c5d4e;
+      }
+
+      #fileInput {
+        display: none;
+      }
+
+      .result {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.5s ease-in-out;
+      }
+
+      .result.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .result h2 {
+        color: #5c3d2e;
+        margin-top: 0;
+      }
+
+      .result pre {
+        background: #f8f8f8;
+        padding: 1rem;
+        border-radius: 6px;
+        overflow-x: auto;
+      }
+
+      .loading {
+        display: none;
+        justify-content: center;
+        align-items: center;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        z-index: 10;
+      }
+
+      .loading .spinner {
+        border: 8px solid #f3f3f3;
+        border-top: 8px solid #5c3d2e;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        animation: spin 1s linear infinite;
+      }
+
+      .loading .text {
+        margin-top: 10px;
+        font-size: 1.2rem;
+        color: #5c3d2e;
+        font-weight: bold;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .error-message {
+        color: #e74c3c;
+        font-weight: bold;
+        margin-top: 1rem;
+      }
+
+      @media (max-width: 600px) {
+        .header h1 {
+          font-size: 2rem;
         }
 
         .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+          padding: 10px;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 2rem;
+        .camera-container.shrink {
+          max-width: 100%;
         }
-
-        .header h1 {
-            color: #5c3d2e;
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .header p {
-            color: #666;
-            font-size: 1.1rem;
-        }
-
-        .camera-container {
-            position: relative;
-            width: 100%;
-            max-width: 640px;
-            margin: 0 auto;
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        #video, #canvas {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        #canvas {
-            display: none;
-        }
-
-        .controls {
-            display: flex;
-            justify-content: center;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.9);
-        }
-
-        .capture-btn {
-            background: #5c3d2e;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: background 0.3s ease;
-        }
-
-        .capture-btn:hover {
-            background: #7c5d4e;
-        }
-
-        .result {
-            margin-top: 2rem;
-            padding: 1.5rem;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .result h2 {
-            color: #5c3d2e;
-            margin-top: 0;
-        }
-
-        .result pre {
-            background: #f8f8f8;
-            padding: 1rem;
-            border-radius: 6px;
-            overflow-x: auto;
-        }
-
-        @media (max-width: 600px) {
-            .header h1 {
-                font-size: 2rem;
-            }
-            
-            .container {
-                padding: 10px;
-            }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <div class="header">
-            <h1>Fossil Identifier</h1>
-            <p>Capture and analyze your fossil discoveries</p>
-        </div>
+      <div class="header">
+        <h1>Fossil-Eyes</h1>
+        <p>Capture and analyze your fossil discoveries</p>
+      </div>
 
-        <div class="camera-container">
-            <video id="video" autoplay playsinline></video>
-            <canvas id="canvas"></canvas>
-            <div class="controls">
-                <button class="capture-btn" id="capture">
-                    <i class="fas fa-camera"></i>
-                    Capture Image
-                </button>
-            </div>
+      <div class="camera-container" id="cameraContainer">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas"></canvas>
+        <img id="uploadedImage" alt="Uploaded fossil" />
+        <div class="controls">
+          <button class="btn" id="capture">
+            <i class="fas fa-camera"></i>
+            Capture Image
+          </button>
+          <button class="btn" id="uploadBtn">
+            <i class="fas fa-upload"></i>
+            Upload Image
+          </button>
+          <input type="file" id="fileInput" accept="image/*" />
         </div>
+        <div class="loading" id="loading">
+          <div class="spinner"></div>
+          <div class="text">Analyzing fossil...</div>
+        </div>
+      </div>
 
-        <div class="result" id="result" style="display: none">
-            <h2>Analysis Results</h2>
-            <pre id="analysis"></pre>
-        </div>
+      <div class="result" id="result" style="display: none">
+        <h2>Analysis Results</h2>
+        <div id="analysis"></div>
+      </div>
     </div>
 
     <script>
-        let streaming = false;
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const captureButton = document.getElementById('capture');
-        const resultDiv = document.getElementById('result');
-        const analysisDiv = document.getElementById('analysis');
+      let streaming = false;
+      let currentStream = null;
+      const video = document.getElementById("video");
+      const canvas = document.getElementById("canvas");
+      const uploadedImage = document.getElementById("uploadedImage");
+      const captureButton = document.getElementById("capture");
+      const uploadButton = document.getElementById("uploadBtn");
+      const fileInput = document.getElementById("fileInput");
+      const resultDiv = document.getElementById("result");
+      const analysisDiv = document.getElementById("analysis");
+      const loadingDiv = document.getElementById("loading");
+      const cameraContainer = document.getElementById("cameraContainer");
 
-        // Get camera access
-        async function startCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'environment' },
-                    audio: false
-                });
-                video.srcObject = stream;
-                video.play();
-                console.log('Camera started successfully');
-            } catch (err) {
-                console.error('Error accessing camera:', err);
-                alert('Error accessing camera. Please make sure you have granted camera permissions.');
-            }
+      async function resetUI() {
+        streaming = false;
+
+        // Stop current stream if it exists
+        if (currentStream) {
+          currentStream.getTracks().forEach((track) => track.stop());
+          currentStream = null;
         }
 
-        // Set up video dimensions once metadata is loaded
-        video.addEventListener('canplay', function() {
-            if (!streaming) {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                streaming = true;
-                console.log('Video dimensions set:', canvas.width, 'x', canvas.height);
+        // Reset UI elements
+        cameraContainer.classList.remove("shrink");
+        resultDiv.style.display = "none";
+        resultDiv.classList.remove("show");
+        captureButton.innerHTML = '<i class="fas fa-camera"></i> Capture Image';
+        uploadButton.style.display = "block";
+
+        // Reset file input
+        fileInput.value = "";
+
+        // Hide uploaded image and show video
+        uploadedImage.style.display = "none";
+        video.style.display = "block";
+
+        // Clear video source
+        if (video.srcObject) {
+          video.srcObject = null;
+        }
+
+        // Restart camera
+        await startCamera();
+      }
+
+      async function startCamera() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment" },
+            audio: false,
+          });
+          currentStream = stream;
+          video.srcObject = stream;
+          video.play();
+          console.log("Camera started successfully");
+        } catch (err) {
+          console.error("Error accessing camera:", err);
+          alert(
+            "Error accessing camera. Please make sure you have granted camera permissions."
+          );
+        }
+      }
+
+      video.addEventListener("canplay", function () {
+        if (!streaming) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          streaming = true;
+          console.log(
+            "Video dimensions set:",
+            canvas.width,
+            "x",
+            canvas.height
+          );
+        }
+      });
+
+      function displayAnalysis(result) {
+        // Shrink camera container
+        cameraContainer.classList.add("shrink");
+
+        // Hide upload button during analysis view
+        uploadButton.style.display = "none";
+
+        // Show and animate results
+        resultDiv.style.display = "block";
+        setTimeout(() => {
+          resultDiv.classList.add("show");
+        }, 50);
+
+        // Change capture button to retry
+        captureButton.innerHTML = '<i class="fas fa-redo"></i> Retry';
+
+        if (result.name === "Non-Fossils" || result.name === "Error") {
+          analysisDiv.innerHTML = `
+            <p><strong>Result:</strong> ${result.name}</p>
+            <p><strong>Confidence:</strong> ${result.confidence.toFixed(2)}%</p>
+            ${
+              result.name === "Error"
+                ? '<p class="error-message">An error occurred during analysis. Please try again.</p>'
+                : ""
             }
-        });
+          `;
+        } else {
+          analysisDiv.innerHTML = `
+            <p><strong>Name:</strong> ${result.name}</p>
+            <p><strong>Confidence:</strong> ${result.confidence.toFixed(2)}%</p>
+            <p><strong>Age:</strong> ${result.Age}</p>
+            <p><strong>Location:</strong> ${result.Location}</p>
+            <p><strong>Fact 1:</strong> ${result.Fact_1}</p>
+            <p><strong>Fact 2:</strong> ${result.Fact_2}</p>
+            <p><strong>Fact 3:</strong> ${result.Fact_3}</p>
+          `;
+        }
+      }
 
-        // Capture and send image
-        captureButton.addEventListener('click', async function() {
-            if (streaming) {
-                // Draw current video frame to canvas
-                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-                
-                // Convert canvas to blob
-                try {
-                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
-                    console.log('Image captured, size:', blob.size, 'bytes');
+      async function analyzeImage(imageData) {
+        loadingDiv.style.display = "flex";
 
-                    // Send to backend
-                    const formData = new FormData();
-                    formData.append('image', blob);
+        try {
+          const formData = new FormData();
+          formData.append("image", imageData);
 
-                    console.log('Sending image to backend...');
-                    const response = await fetch('/analyze', {
-                        method: 'POST',
-                        body: formData
-                    });
+          console.log("Sending image to backend...");
+          const response = await fetch("/analyze", {
+            method: "POST",
+            body: formData,
+          });
 
-                    if (!response.ok) throw new Error('Backend error');
+          if (!response.ok) throw new Error("Backend error");
 
-                    const result = await response.json();
-                    console.log('Received analysis:', result);
+          const result = await response.json();
+          console.log("Received analysis:", result);
 
-                    // Display results
-                    resultDiv.style.display = 'block';
-                    analysisDiv.textContent = JSON.stringify(result, null, 2);
-                } catch (err) {
-                    console.error('Error processing image:', err);
-                    alert('Error processing image. Please try again.');
-                }
-            }
-        });
+          displayAnalysis(result);
+        } catch (err) {
+          console.error("Error processing image:", err);
+          displayAnalysis({
+            name: "Error",
+            confidence: 0,
+          });
+        } finally {
+          loadingDiv.style.display = "none";
+        }
+      }
 
-        // Start camera when page loads
-        startCamera();
+      captureButton.addEventListener("click", async function () {
+        if (captureButton.innerHTML.includes("Retry")) {
+          await resetUI();
+          return;
+        }
+
+        if (streaming) {
+          video.pause();
+          canvas
+            .getContext("2d")
+            .drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          const blob = await new Promise((resolve) =>
+            canvas.toBlob(resolve, "image/jpeg", 0.9)
+          );
+
+          await analyzeImage(blob);
+        }
+      });
+
+      uploadButton.addEventListener("click", () => {
+        fileInput.click();
+      });
+
+      fileInput.addEventListener("change", async (e) => {
+        if (e.target.files && e.target.files[0]) {
+          const file = e.target.files[0];
+
+          // Create URL for uploaded image
+          const imageUrl = URL.createObjectURL(file);
+
+          // Hide video and show uploaded image
+          video.style.display = "none";
+          uploadedImage.src = imageUrl;
+          uploadedImage.style.display = "block";
+
+          // Stop the video stream
+          if (currentStream) {
+            currentStream.getTracks().forEach((track) => track.stop());
+            currentStream = null;
+          }
+
+          await analyzeImage(file);
+
+          // Clean up the object URL
+          URL.revokeObjectURL(imageUrl);
+        }
+      });
+
+      startCamera();
     </script>
-</body>
+  </body>
 </html>
