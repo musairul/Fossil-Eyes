@@ -2,7 +2,7 @@ from flask import json
 from openai import OpenAI
 
 def analyse_fossil(fossil_name):
-    client = OpenAI(api_key="sk-svcacct-cNpEjHaToqE8f1_oq5mtOav-MW58kAAPPnY2lzO3W3FdX1lTM4-B88AF-DU36xuVT3BlbkFJiYStWmktQpsH4HTId447QBQGCh4jmzqdiyzaD-Lk-hudqrQbinAEXD8tlcRAO9kA")
+    client = OpenAI(api_key="secret.OPEN_AI")
     
     try:
         response = client.chat.completions.create(
