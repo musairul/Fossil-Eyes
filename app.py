@@ -79,4 +79,4 @@ def analyze_image():
 
 if __name__ == '__main__':
     logger.info("Starting Flask server")
-    app.run(debug=True)
+    app.run(debug=False)

@@ -349,7 +349,7 @@
           if (!response.ok) throw new Error("Backend error");
 
           const result = await response.json();
-          console.log("Received analysis:", result);
+          console.log("Recieved analysis:", result);
 
           displayAnalysis(result);
         } catch (err) {
