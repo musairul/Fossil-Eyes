@@ -11,8 +11,9 @@ Fossil-Eyes allows a user to take an image of a fossil. It then uses machine lea
 Fossil-Eyes also contains a collections feature, where any fossils found get added to the collection, encouraging users to find more to grow their collection.
 
 ## Learn more about Fossil-Eyes
-See the devpost: [https://devpost.com/software/fossileyes](https://devpost.com/software/fossileyes)
-Read the blog on how it was made: [https://musairul.github.io/blog/the-hackiest-hackathon-ever.html](https://musairul.github.io/blog/the-hackiest-hackathon-ever.html)
+
+- See the devpost: [https://devpost.com/software/fossileyes](https://devpost.com/software/fossileyes)
+- Read the blog on how it was made: [https://musairul.github.io/blog/the-hackiest-hackathon-ever.html](https://musairul.github.io/blog/the-hackiest-hackathon-ever.html)
 
 
 ## How to install/run
