@@ -13,6 +13,7 @@ Fossil-Eyes also contains a collections feature, where any fossils found get add
 ## Learn more about Fossil-Eyes
 
 - See the devpost: [https://devpost.com/software/fossileyes](https://devpost.com/software/fossileyes)
+- Read the blogpost: [https://musairul.github.io/blog/the-hackiest-hackathon-ever.html](https://musairul.github.io/blog/the-hackiest-hackathon-ever.html)
 
 
 ## How to install/run
